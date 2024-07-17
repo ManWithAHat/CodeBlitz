@@ -3,10 +3,12 @@ import { useEffect, useState } from 'react';
 import { db,doc,collection,setDoc,onSnapshot,updateDoc,getDoc,addDoc } from './firebase';
 import { async } from '@firebase/util';
 import CodeEditor from './CodeEditor';
+import Player from './Player';
+import Host from './Host';
 function App() {
   const [count,setCount] = useState(0)
   const [name,Setname] = useState('')
-  const [PlayerGroup,SetPlayerGroup] = useState([])
+  
   const [RoomCode,setRoomCode] = useState('')
   const [ErrorMsg,SetErrorMsg] = useState('')
   var Role = 0
@@ -14,34 +16,10 @@ function App() {
   const [Qs,SetQs] = useState(['phxvHerN5Qrqy9NWXbP2'])
   const [image,SetImage] = useState("https://api.dicebear.com/9.x/big-smile/svg?seed=Jhon")
   var GameRef
-  var PlayerIndex = 0
-
-
-  useEffect(()=>{
-    console.log(1)
-    if(Role!=0 && GameRef){
-      const unsub = onSnapshot(
-        doc(GameRef),(snap)=>{
-          if(Role ===1){
-            if (Current != snap.data().Current){
-            SetCurrent(snap.data().Current)}
-          }
-          else if(Role === 2){
-            var P = []
-            for(let i = 0;i < snap.data().Players.length;i++){
-              P.push([snap.data().Players[i],snap.data().Scores[i],snap.data().Completion[i]])
-            }
-            console.log(P)
-            if (PlayerGroup != P){
-            SetPlayerGroup(P)}
-          }
-        }
-      )
-      return ()=>{
-        unsub()
-      }
-    }
-  },[Role])
+  const [PIndex,SetPIndex] = useState()
+  const endgame = ()=>{
+    setCount(6)
+  }
 
 
   if (count === 0){
@@ -79,18 +57,23 @@ function App() {
               const docSnap = await getDoc(GameRef)
               if(docSnap.exists()){
                 SetQs(docSnap.data().Questions)
-                setCount(5)
+                
                 var Scores = []
                 var Players = []
                 var completion = []
                 Players = docSnap.data().Players
+                console.log(Players)
+                console.log(name)
                 if(Players.includes(name)){
                   SetErrorMsg("Name is already taken")
                 }else{
-                  PlayerIndex = Players.length
+                  SetPIndex(Players.length)
                   Players.push(name)
+                  updateDoc(GameRef,{Players:Players,Scores:new Array(Players.length).fill(0),Completion:new Array(Players.length).fill(0)})
+                  setCount(5)
                 }
-                updateDoc(GameRef,{Players:Players,Scores:new Array(Players.length).fill(0),Completion:new Array(Players.length).fill(0)})
+
+                
               }else{
                 SetErrorMsg("Code not found")
                 console.log(ErrorMsg)
@@ -101,13 +84,11 @@ function App() {
         </div>
       );}
   else if(count === 5){
-    var GameRef = doc(db,"Games",RoomCode.toString())
+    console.log(PIndex)
     return(
-      <div>
-        <h1>You're in the waiting room</h1>
-        <p>{Qs}</p>
-      </div>
+    <Player RoomCode={RoomCode} PlayerIndex={PIndex} endgame={endgame}/>
     )
+
   }
 
   //host
@@ -129,70 +110,19 @@ function App() {
       </div>
     );}
     else if (count >= 99999){
-      Role = 2
-      console.log(Role)
-      if(Current ===0){
       return(
-      <div className="App"> 
-        <header>
-        <h1>{count}</h1>
-          <ul>
-            {PlayerGroup.map(player =>(
-              <div style={{display:'flex'}}>
-                <h2>{player[0]}</h2>
-                <img
-                style={{width:100,height:100}}
-                src = {"https://api.dicebear.com/9.x/big-smile/svg?seed="+player[0]}
-                />
-              </div>
-            ))}
-          </ul>
-        <button onClick={()=>{updateDoc(doc(db,"Games",count.toString()),{Current:1});SetCurrent(1)}}>Start</button>
-        </header>
-      </div>)}
-      else if(Current === -1){
-        return(
-          <p>Leaderboard</p>
-        )
-      }
-      else{
-        var Desc
-        var Title
-        const GetQ =async() =>{
-        const Snap = await getDoc(doc(db,"Questions",Qs[Current]))
-        console.log(Snap)
-        Desc = Snap.data().Desc
-        Title = Snap.data().Title
-        }
-        GetQ()
-        return(
-        <div className="App"> 
-          <header>
-            <div>
-              <h1>{Title}</h1>
-              <p>{Desc}</p>
-              {PlayerGroup.map(player=>{
-                <div>
-                <p>{player[0]}</p>
-                <p>{player[3]}</p>
-                </div>
-              })}
-              <button onClick={
-              ()=>{
-                if(Current===Qs.length){
-                  updateDoc(doc(db,"Games",count.toString()),{Current:-1})
-                  SetCurrent(-1)
-                }
-                else{
-                  SetCurrent(Current+1)
-                  updateDoc(doc(db,"Games",count.toString()),{Current:Current})
-                }
-              }
-              }>Next</button>
-            </div>
-          </header>
-        </div>)}
+      <Host RoomCode={count} endgame = {endgame}/>
+      )
     }}
+    // leaderboard
+    else if(count ==6){
+      return(
+        <div>
+          <h1>leaderboard here, game ended</h1>
+          <button onClick={()=>setCount(0)}>Back to main menu</button>
+        </div>
+      )
+    }
 }
 
 export default App;
