@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { db,doc } from "./firebase";
 import { getDoc, updateDoc } from "firebase/firestore";
+import { Button, Spinner } from "@chakra-ui/react";
 
 const CodeEditor = (lst) =>{
     const [EValue,SetEValue] = useState("def Answer(input):\n\t\n\treturn input")
@@ -81,40 +82,42 @@ const CodeEditor = (lst) =>{
     }
     if(Score==lst['Qlist'].length){
         return(
-            <div>
-                <h1>
+            <div style={{display:'flex',margin:10,marginTop:50,borderRadius:20,flexDirection:'column',alignItems:'center',backgroundColor:'#38A169'}}>
+                <h1 style={{color:'white',margin:20,fontSize:80,fontWeight:'bold'}}>
                     You Solved It!
                 </h1>
-                <p>Waiting for others</p>
+                <p style={{color:'white',margin:20,fontSize:30}}>Waiting for others</p>
+                <Spinner color='white' thickness='4px' margin={50} size='xl'/>
             </div>
         )
     }
     if (Time <= 0){
         return(
-            <div>
-                <h1>Time out</h1>
-                <p>Womp womp</p>
+            <div style={{display:'flex',margin:10,marginTop:50,borderRadius:20,flexDirection:'column',alignItems:'center',backgroundColor:'#E53E3E'}}>
+                <h1 style={{color:'white',margin:20,fontSize:80,fontWeight:'bold'}}>Time out</h1>
+                <p style={{color:'white',margin:20,fontSize:30}}>Womp womp</p>
             </div>
         )
     }
     return(
-        <div>
-        <div>
-            <p>{Time}</p>
-            <p>{Score}</p>
-            <p>Language selector</p>
-            <button onClick={()=>{runcode()}}>Submit</button>
-        </div>
-        <Editor
-        height="90vh"
-        theme="vs-dark"
-        defaultLanguage="python"
-        defaultValue={EValue}
-        language="python"
-        
-        onChange = {(e)=>{SetEValue(e)
-        }}
-        />
+        <div style={{alignSelf:'center',justifyContent:'center',marginTop:30,borderRadius:20,backgroundColor:'#8D99AE',width:'80%',display:'flex',flexDirection:'column'}}>
+        <div style={{paddingLeft:10,height:'5vh',paddingRight:10,display:'flex',alignItems:'center',justifyContent:'center'}}>
+            {Score=='Loading'? <Spinner thickness={5} color='white' />:<p style={{flexGrow:0.5,fontSize:30,fontWeight:'bold',color:'white'}}>Cases Solved:{Score}/10</p>}
+            <p style={{textAlign:'center',flexGrow:1,color:'white',fontSize:30}}><b>Time:{Time}</b></p>
+            <div style={{display:'flex',flexGrow:1,justifyContent:'end'}}>
+            <Button  borderRadius={15} colorScheme='green' marginRight={-1} onClick={()=>{runcode()}}>Submit</Button>
+            </div>
+            </div>
+            <Editor
+            height="90vh"
+            theme="vs-dark"
+            defaultLanguage="python"
+            defaultValue={EValue}
+            language="python"
+            
+            onChange = {(e)=>{SetEValue(e)
+            }}
+            />
         </div>
     )
 }
